@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t nathansun/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true nathansun/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t nathansun/multi-client ./client
+  - docker build -t nathansun/multi-nginx ./nginx
+  - docker build -t nathansun/multi-server ./server
+  - docker build -t nathansun/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take builds and push to docker hub
+  - docker push nathansun/multi-client
+  - docker push nathansun/multi-nginx 
+  - docker push nathansun/multi-server
+  - docker push nathansun/multi-worker
